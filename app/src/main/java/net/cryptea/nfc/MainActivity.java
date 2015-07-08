@@ -21,6 +21,7 @@ import android.view.MenuItem;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.util.Date;
 import java.util.Locale;
@@ -47,9 +48,9 @@ public class MainActivity extends ActionBarActivity {
         mDialog = new AlertDialog.Builder(this).setNeutralButton("Ok", null).create();
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
 
-        if(nfcAdapter == null) {
+        if (nfcAdapter == null) {
             showMessage(R.string.error, R.string.no_nfc);
-        }else if(!nfcAdapter.isEnabled()) {
+        } else if (!nfcAdapter.isEnabled()) {
             showMessage(R.string.warning, R.string.nfc_disabled);
             showWirelessSettingsDialog();
         }
@@ -57,8 +58,8 @@ public class MainActivity extends ActionBarActivity {
         pendingIntent = PendingIntent.getActivity(this, 0,
                 new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
 
-        ndefMessage = new NdefMessage(new NdefRecord[] { newTextRecord(
-                "Message from NFC Reader :-)", Locale.ENGLISH, true) });
+        ndefMessage = new NdefMessage(new NdefRecord[]{newTextRecord(
+                "Message from NFC Reader :-)", Locale.ENGLISH, true)});
 
         getMenuInflater().inflate(R.menu.menu_main, menu);
 
@@ -91,8 +92,8 @@ public class MainActivity extends ActionBarActivity {
 
         super.onResume();
 
-        if(nfcAdapter != null){
-            if(!nfcAdapter.isEnabled()){
+        if (nfcAdapter != null) {
+            if (!nfcAdapter.isEnabled()) {
                 showWirelessSettingsDialog();
             }
             nfcAdapter.enableForegroundDispatch(this, pendingIntent, null, null);
@@ -160,7 +161,6 @@ public class MainActivity extends ActionBarActivity {
     }
 
 
-
     private void resolveIntent(Intent intent) {
 
         Log.d("Resolve Intent", "Start");
@@ -182,17 +182,26 @@ public class MainActivity extends ActionBarActivity {
                 byte[] empty = new byte[0];
                 byte[] id = intent.getByteArrayExtra(NfcAdapter.EXTRA_ID);
                 Parcelable tag = intent.getParcelableExtra(NfcAdapter.EXTRA_TAG);
-                byte[] payload = dumpTagData(tag).getBytes();
-                NdefRecord record = new NdefRecord(NdefRecord.TNF_UNKNOWN, empty, id, payload);
-                NdefMessage msg = new NdefMessage(new NdefRecord[] { record });
-                msgs = new NdefMessage[] { msg };
-            }
 
-            StringBuffer sb = new StringBuffer();
-            for (NdefMessage msg : msgs){
-                sb.append(msg.toString());
+                NFCReader nfcReader = new NFCReader();
+
+                String result = nfcReader.readTag(tag);
+                ((TextView) findViewById(R.id.textView)).setText(result);
+                byte[] payload = result.getBytes();
+                NdefRecord record = new NdefRecord(NdefRecord.TNF_UNKNOWN, empty, id, payload);
+                NdefMessage msg = new NdefMessage(new NdefRecord[]{record});
+
+
+                for (NdefRecord re : msg.getRecords())
+                    try {
+                        Log.d("---> READ", readText(re));
+                    } catch (UnsupportedEncodingException e) {
+                        e.printStackTrace();
+                    }
+
+
+                msgs = new NdefMessage[]{msg};
             }
-            Log.d("Resolve Intent SB: ", sb.toString());
 
         }
 
@@ -200,125 +209,29 @@ public class MainActivity extends ActionBarActivity {
     }
 
 
-    private String dumpTagData(Parcelable p) {
-        Log.d("Sump Tag data", "Start");
-        StringBuilder sb = new StringBuilder();
-        Tag tag = (Tag) p;
-        byte[] id = tag.getId();
-        sb.append("Tag ID (hex): ").append(getHex(id)).append("\n");
-        sb.append("Tag ID (dec): ").append(getDec(id)).append("\n");
-        sb.append("ID (reversed): ").append(getReversed(id)).append("\n");
+    private String readText(NdefRecord record) throws UnsupportedEncodingException {
+        /*
+         * See NFC forum specification for "Text Record Type Definition" at 3.2.1
+         *
+         * http://www.nfc-forum.org/specs/
+         *
+         * bit_7 defines encoding
+         * bit_6 reserved for future use, must be 0
+         * bit_5..0 length of IANA language code
+         */
 
-        String prefix = "android.nfc.tech.";
-        sb.append("Technologies: ");
-        for (String tech : tag.getTechList()) {
-            sb.append(tech.substring(prefix.length()));
-            sb.append(", ");
-        }
-        sb.delete(sb.length() - 2, sb.length());
-        for (String tech : tag.getTechList()) {
-            if (tech.equals(MifareClassic.class.getName())) {
+        byte[] payload = record.getPayload();
 
-                Log.d("NFC DUMP", "Its a Mifare Classic Card");
-                sb.append('\n');
-                MifareClassic mifareTag = MifareClassic.get(tag);
-                String type = "Unknown";
-                switch (mifareTag.getType()) {
-                    case MifareClassic.TYPE_CLASSIC:
-                        type = "Classic";
-                        break;
-                    case MifareClassic.TYPE_PLUS:
-                        type = "Plus";
-                        break;
-                    case MifareClassic.TYPE_PRO:
-                        type = "Pro";
-                        break;
-                }
+        // Get the Text Encoding
+        String textEncoding = ((payload[0] & 128) == 0) ? "UTF-8" : "UTF-16";
 
-                sb.append("Mifare Classic type: ");
-                sb.append(type);
-                sb.append('\n');
+        // Get the Language Code
+        int languageCodeLength = payload[0] & 0063;
 
-                sb.append("Mifare size: ");
-                sb.append(mifareTag.getSize() + " bytes");
-                sb.append('\n');
+        // String languageCode = new String(payload, 1, languageCodeLength, "US-ASCII");
+        // e.g. "en"
 
-                sb.append("Mifare sectors: ");
-                sb.append(mifareTag.getSectorCount());
-                sb.append('\n');
-
-                sb.append("Mifare blocks: ");
-                sb.append(mifareTag.getBlockCount());
-            }
-
-            if (tech.equals(MifareUltralight.class.getName())) {
-
-                Log.d("NFC DUMP", "Its a Mifare ultra light card.");
-                sb.append('\n');
-                MifareUltralight mifareUlTag = MifareUltralight.get(tag);
-                String type = "Unknown";
-                switch (mifareUlTag.getType()) {
-                    case MifareUltralight.TYPE_ULTRALIGHT:
-                        type = "Ultralight";
-                        break;
-                    case MifareUltralight.TYPE_ULTRALIGHT_C:
-                        type = "Ultralight C";
-                        break;
-                }
-                sb.append("Mifare Ultralight type: ");
-                sb.append(type);
-            }
-        }
-        Log.d("NFC DUMP", sb.toString());
-        if(textView != null) {
-
-        } else {
-            Log.d("NFC DUMP", "textview is empty!");
-            textView = (TextView) findViewById(R.id.textView);
-        }
-
-        if(textView!= null){
-            Log.d("NFC DUMP", "BAMM");
-            textView.setText(sb.toString());
-        }
-
-        Log.d("Sump Tag data", "Finished");
-        return sb.toString();
-    }
-
-    private String getHex(byte[] bytes) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = bytes.length - 1; i >= 0; --i) {
-            int b = bytes[i] & 0xff;
-            if (b < 0x10)
-                sb.append('0');
-            sb.append(Integer.toHexString(b));
-            if (i > 0) {
-                sb.append(" ");
-            }
-        }
-        return sb.toString();
-    }
-
-    private long getDec(byte[] bytes) {
-        long result = 0;
-        long factor = 1;
-        for (int i = 0; i < bytes.length; ++i) {
-            long value = bytes[i] & 0xffl;
-            result += value * factor;
-            factor *= 256l;
-        }
-        return result;
-    }
-
-    private long getReversed(byte[] bytes) {
-        long result = 0;
-        long factor = 1;
-        for (int i = bytes.length - 1; i >= 0; --i) {
-            long value = bytes[i] & 0xffl;
-            result += value * factor;
-            factor *= 256l;
-        }
-        return result;
+        // Get the Text
+        return new String(payload, languageCodeLength + 1, payload.length - languageCodeLength - 1, textEncoding);
     }
 }
