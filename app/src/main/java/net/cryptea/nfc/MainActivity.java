@@ -7,23 +7,20 @@ import android.content.Intent;
 import android.nfc.NdefMessage;
 import android.nfc.NdefRecord;
 import android.nfc.NfcAdapter;
-import android.nfc.Tag;
-import android.nfc.tech.MifareClassic;
-import android.nfc.tech.MifareUltralight;
+import android.os.Bundle;
 import android.os.Parcelable;
 import android.provider.Settings;
 import android.support.v7.app.ActionBarActivity;
-import android.os.Bundle;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.LinearLayout;
 import android.widget.TextView;
+
+import net.cryptea.nfc.Database.NfcDBConnector;
+import net.cryptea.nfc.Database.NfcObject;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
-import java.util.Date;
 import java.util.Locale;
 
 
@@ -34,6 +31,8 @@ public class MainActivity extends ActionBarActivity {
     private PendingIntent pendingIntent;
     private NdefMessage ndefMessage;
     private TextView textView;
+    private NfcDBConnector dbHelper;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +53,8 @@ public class MainActivity extends ActionBarActivity {
             showMessage(R.string.warning, R.string.nfc_disabled);
             showWirelessSettingsDialog();
         }
+
+        dbHelper = new NfcDBConnector(getBaseContext());
 
         pendingIntent = PendingIntent.getActivity(this, 0,
                 new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
@@ -100,9 +101,7 @@ public class MainActivity extends ActionBarActivity {
             nfcAdapter.enableForegroundNdefPush(this, ndefMessage);
         }
 
-
         resolveIntent(getIntent());
-
         Log.d("On Resume", "Finished");
     }
 
@@ -185,9 +184,15 @@ public class MainActivity extends ActionBarActivity {
 
                 NFCReader nfcReader = new NFCReader();
 
-                String result = nfcReader.readTag(tag);
+                NfcObject nfcO = nfcReader.readTag(tag);
+                StringBuffer result = new StringBuffer();
+                result.append("Tag ID: ").append(nfcO.getId()).append("\n");
+                result.append("TagType: ").append(nfcO.getTypesAsString()).append("\n");
+                result.append("Payload: ").append(nfcO.getPayload()).append("\n");
                 ((TextView) findViewById(R.id.textView)).setText(result);
-                byte[] payload = result.getBytes();
+
+
+              /*  byte[] payload = result.getBytes();
                 NdefRecord record = new NdefRecord(NdefRecord.TNF_UNKNOWN, empty, id, payload);
                 NdefMessage msg = new NdefMessage(new NdefRecord[]{record});
 
@@ -200,7 +205,7 @@ public class MainActivity extends ActionBarActivity {
                     }
 
 
-                msgs = new NdefMessage[]{msg};
+                msgs = new NdefMessage[]{msg};*/
             }
 
         }

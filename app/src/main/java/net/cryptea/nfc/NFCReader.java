@@ -1,24 +1,18 @@
 package net.cryptea.nfc;
 
-import android.app.Activity;
-import android.nfc.NdefMessage;
-import android.nfc.NdefRecord;
 import android.nfc.Tag;
 import android.nfc.tech.MifareClassic;
 import android.nfc.tech.MifareUltralight;
-import android.nfc.tech.Ndef;
 import android.nfc.tech.NdefFormatable;
 import android.nfc.tech.NfcA;
 import android.nfc.tech.NfcV;
 import android.os.Parcelable;
 import android.util.Log;
-import android.view.View;
-import android.widget.TextView;
+
+import net.cryptea.nfc.Database.NfcObject;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
-import java.util.Arrays;
 
 /**
  * Created by keyo on 08/07/15.
@@ -31,23 +25,26 @@ import java.util.Arrays;
 public class NFCReader {
 
     CodecConverter codecConverter = new CodecConverter();
-    private StringBuilder sb;
+    private NfcObject nfcObject;
+    private StringBuffer payload = new StringBuffer();
 
 
-    public String readTag(Parcelable p) {
+    public NfcObject readTag(Parcelable p) {
 
         Log.d("Read tag", "Start");
-        sb = new StringBuilder();
+
+        nfcObject = new NfcObject();
+
         Tag tag = (Tag) p;
 
         // Read the ID of the Tag an present it as Hex value.
-        sb.append("Tag ID:").append(codecConverter.getHex(tag.getId())).append("\n");
+        nfcObject.setId(codecConverter.getHex(tag.getId()));
 
 
         for (String tech : tag.getTechList()) {
-            sb.append("\n").append("Technologies: ").append(tech);
-
             Log.d("Technologies: ", tech);
+
+            nfcObject.addType(tech);
 
             if (tech.equals(MifareClassic.class.getName())) {
                 mifareClassic(tag);
@@ -62,12 +59,9 @@ public class NFCReader {
             } else {
                 Log.d("Type", tech);
             }
-
         }
 
-
-        Log.d("Dump: ", sb.toString());
-        return sb.toString();
+        return nfcObject;
     }
 
 
@@ -76,7 +70,7 @@ public class NFCReader {
         try {
             mifareClassic.connect();
             byte[] bytePayload = mifareClassic.readBlock(MifareClassic.BLOCK_SIZE);
-            sb.append("Payload: ").append(new String(bytePayload, Charset.forName("US-ASCII")));
+            payload.append("Payload: ").append(new String(bytePayload, Charset.forName("US-ASCII")));
             mifareClassic.close();
 
         } catch (IOException e) {
@@ -91,7 +85,7 @@ public class NFCReader {
         try {
             mifareUltralight.connect();
             byte[] bytePayload = mifareUltralight.readPages(MifareUltralight.PAGE_SIZE);
-            sb.append("Payload: ").append(new String(bytePayload, Charset.forName("US-ASCII")));
+            payload.append("Payload: ").append(new String(bytePayload, Charset.forName("US-ASCII")));
             mifareUltralight.close();
 
         } catch (IOException e) {
@@ -105,13 +99,10 @@ public class NFCReader {
             NfcV nfcV = NfcV.get(tag);
 
             nfcV.connect();
-
-            sb.append("\n\t").append("Max Transceive length: ").append(nfcV.getMaxTransceiveLength());
-            sb.append("\n\t").append("Response flags: ").append(nfcV.getResponseFlags());
-            sb.append("\n\t").append("DSF ID: ").append(nfcV.getDsfId());
-
+            payload.append("\n\t").append("Max Transceive length: ").append(nfcV.getMaxTransceiveLength());
+            payload.append("\n\t").append("Response flags: ").append(nfcV.getResponseFlags());
+            payload.append("\n\t").append("DSF ID: ").append(nfcV.getDsfId());
             nfcV.close();
-            Log.d("NcfV", sb.toString());
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -125,8 +116,8 @@ public class NFCReader {
             nfcA.connect();
             Short s = nfcA.getSak();
             byte[] a = nfcA.getAtqa();
-            sb.append("SAK: ").append(s).append("\n");
-            sb.append("ATQA").append(codecConverter.getHex(a)).append("\n");
+            payload.append("SAK: ").append(s).append("\n");
+            payload.append("ATQA").append(codecConverter.getHex(a)).append("\n");
             nfcA.close();
 
         } catch (IOException e) {
