@@ -17,11 +17,8 @@ public class NfcDBConnector extends SQLiteOpenHelper {
     private static final String COMMA_SEP = ",";
     private static final String SQL_CREATE_ENTRIES =
             "CREATE TABLE " + NfcEntry.TABLE_NAME + " (" +
-                    NfcEntry._ID + " INTEGER PRIMARY KEY," +
-                    NfcEntry.COLUMN_NAME_IMAGE + TEXT_TYPE + COMMA_SEP +
-                    NfcEntry.COLUMN_NAME_TYPES + TEXT_TYPE + COMMA_SEP +
-                    NfcEntry.COLUMN_NAME_PAYLOAD + TEXT_TYPE + COMMA_SEP +
-
+                    NfcEntry._ID + " INTEGER PRIMARY KEY, " +
+                    NfcEntry.COLUMN_NAME_ID + TEXT_TYPE +
                     " )";
     private static final String SQL_DELETE_ENTRIES =
             "DROP TABLE IF EXISTS " + NfcEntry.TABLE_NAME;
@@ -52,9 +49,6 @@ public class NfcDBConnector extends SQLiteOpenHelper {
     public static abstract class NfcEntry implements BaseColumns {
         public static final String TABLE_NAME = "NFCCards";
         public static final String COLUMN_NAME_ID = "tagID";
-        public static final String COLUMN_NAME_IMAGE = "image";
-        public static final String COLUMN_NAME_TYPES = "types";
-        public static final String COLUMN_NAME_PAYLOAD = "payload";
     }
 
 

@@ -17,6 +17,7 @@ import android.view.MenuItem;
 import android.widget.TextView;
 
 import net.cryptea.nfc.Database.NfcDBConnector;
+import net.cryptea.nfc.Database.NfcDBHelper;
 import net.cryptea.nfc.Database.NfcObject;
 
 import java.io.UnsupportedEncodingException;
@@ -31,7 +32,7 @@ public class MainActivity extends ActionBarActivity {
     private PendingIntent pendingIntent;
     private NdefMessage ndefMessage;
     private TextView textView;
-    private NfcDBConnector dbHelper;
+    private NfcDBHelper nfcDBHelper;
 
 
     @Override
@@ -44,6 +45,9 @@ public class MainActivity extends ActionBarActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
 
+        // DEVELOP Remove all DB
+        getBaseContext().deleteDatabase(NfcDBConnector.DATABASE_NAME);
+
         mDialog = new AlertDialog.Builder(this).setNeutralButton("Ok", null).create();
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
 
@@ -54,7 +58,8 @@ public class MainActivity extends ActionBarActivity {
             showWirelessSettingsDialog();
         }
 
-        dbHelper = new NfcDBConnector(getBaseContext());
+
+        nfcDBHelper = new NfcDBHelper(getBaseContext());
 
         pendingIntent = PendingIntent.getActivity(this, 0,
                 new Intent(this, getClass()).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP), 0);
@@ -190,6 +195,17 @@ public class MainActivity extends ActionBarActivity {
                 result.append("TagType: ").append(nfcO.getTypesAsString()).append("\n");
                 result.append("Payload: ").append(nfcO.getPayload()).append("\n");
                 ((TextView) findViewById(R.id.textView)).setText(result);
+
+
+                if (nfcDBHelper != null) {
+                    nfcDBHelper.write(nfcO);
+                    Log.d("DB: ", "Good news!");
+                } else {
+                    nfcDBHelper = new NfcDBHelper(getBaseContext());
+                    nfcDBHelper.write(nfcO);
+                    Log.d("DB: ", "Good news!");
+                }
+
 
 
               /*  byte[] payload = result.getBytes();

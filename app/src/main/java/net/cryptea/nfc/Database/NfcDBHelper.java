@@ -26,8 +26,6 @@ public class NfcDBHelper {
         // Create a new map of values, where column names are the keys
         ContentValues values = new ContentValues();
         values.put(NfcDBConnector.NfcEntry.COLUMN_NAME_ID, tag.getId());
-        values.put(NfcDBConnector.NfcEntry.COLUMN_NAME_PAYLOAD, tag.getPayload());
-        values.put(NfcDBConnector.NfcEntry.COLUMN_NAME_TYPES, tag.getTypesAsString());
         // Insert the new row, returning the primary key value of the new row
         long newRowId;
         newRowId = db.insert(
