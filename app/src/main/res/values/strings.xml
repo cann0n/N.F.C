@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">N.F.C</string>
+    <string name="app_name">NFC</string>
 
     <string name="hello_world">Hello world!</string>
     <string name="action_settings">Settings</string>
@@ -8,4 +8,6 @@
     <string name="warning">Warning</string>
     <string name="nfc_disabled">Please activate NFC on your device.</string>
     <string name="WelcomeMessage">Please Tag your card to the device.</string>
+    <string name="servicedesc">Just a HCE service</string>
+    <string name="aiddescription">aid description ;-)</string>
 </resources>

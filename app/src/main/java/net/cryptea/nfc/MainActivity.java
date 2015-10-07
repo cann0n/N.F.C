@@ -33,12 +33,14 @@ public class MainActivity extends ActionBarActivity {
     private NdefMessage ndefMessage;
     private TextView textView;
     private NfcDBHelper nfcDBHelper;
+    private NFCEmulator nfcEmulator;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
     }
 
     @Override
@@ -48,7 +50,9 @@ public class MainActivity extends ActionBarActivity {
         // DEVELOP Remove all DB
         getBaseContext().deleteDatabase(NfcDBConnector.DATABASE_NAME);
 
-        mDialog = new AlertDialog.Builder(this).setNeutralButton("Ok", null).create();
+      //  nfcEmulator = new NFCEmulator();
+
+   /*     mDialog = new AlertDialog.Builder(this).setNeutralButton("Ok", null).create();
         nfcAdapter = NfcAdapter.getDefaultAdapter(this);
 
         if (nfcAdapter == null) {
@@ -70,7 +74,7 @@ public class MainActivity extends ActionBarActivity {
         getMenuInflater().inflate(R.menu.menu_main, menu);
 
         textView = (TextView) findViewById(R.id.textView);
-
+*/
         return true;
     }
 
@@ -94,9 +98,15 @@ public class MainActivity extends ActionBarActivity {
 
     @Override
     protected void onResume() {
-        Log.d("On Resume", "Start");
+       Log.d("On Resume", "Start");
 
         super.onResume();
+
+     //   if(nfcEmulator == null){
+     //       nfcEmulator = new NFCEmulator();
+        //   }
+
+        /*
 
         if (nfcAdapter != null) {
             if (!nfcAdapter.isEnabled()) {
@@ -107,7 +117,7 @@ public class MainActivity extends ActionBarActivity {
         }
 
         resolveIntent(getIntent());
-        Log.d("On Resume", "Finished");
+        Log.d("On Resume", "Finished");*/
     }
 
     @Override
